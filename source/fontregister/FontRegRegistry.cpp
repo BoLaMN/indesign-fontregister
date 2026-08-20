@@ -26,15 +26,15 @@ namespace fs = std::filesystem;
 namespace
 {
 
+// C++17: u8path/u8string speak std::string carrying UTF-8.
 fs::path ToPath(const std::string& utf8)
 {
-	return fs::path(reinterpret_cast<const char8_t*>(utf8.c_str()));
+	return fs::u8path(utf8);
 }
 
 std::string FromPath(const fs::path& p)
 {
-	const std::u8string u8 = p.u8string();
-	return std::string(u8.begin(), u8.end());
+	return p.u8string();
 }
 
 bool LooksLikeFontFile(const fs::path& p)

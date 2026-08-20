@@ -1,0 +1,12 @@
+// FontReg -- shim over the InDesign SDK's shared build settings.
+//
+// Our project lives outside the SDK tree, so we pull in the SDK's settings and
+// then re-point ID_SDK_ROOT at the SDK. xcconfig variable references resolve
+// lazily, so every $(ID_SDK_ROOT)/... path inherited above picks this up.
+//
+// Convention: the SDK is expected at <repo>/sdk. Override ID_SDK_ROOT here (or
+// in the environment) if you keep it elsewhere.
+
+#include "../../../../sdk/build/mac/prj/_shared_build_settings/common_release.xcconfig"
+
+ID_SDK_ROOT = ../../../sdk

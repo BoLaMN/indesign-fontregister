@@ -173,7 +173,7 @@ resource VersionedScriptElementInfo(1)
 			"font registration",
 			"A session-scoped font registration made by registerFont or registerFontFolder. Unregistering removes exactly the fonts that call installed.",
 			kFontRegistration_CLSID,
-			CollectionInfo( c_FontRegistrations, "font registrations", "The session's active font registrations.", kFontRegistrations_CLSID ),
+			c_FontRegistrations, "font registrations", "The session's active font registrations.", kFontRegistrations_CLSID,
 			kIDBasedObjectScriptElement,
 			kBasicSuiteScriptElement,
 		}

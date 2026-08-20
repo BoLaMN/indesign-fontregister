@@ -129,7 +129,7 @@ ErrorCode FontRegScriptProvider::GetObjectByID(IScriptRequestData* data, IScript
 			return kFailure;
 		objectList.push_back(proxy);
 	}
-	data->AppendReturnData(parent, data->GetAccessor(), ScriptData(objectList));
+	data->AppendReturnData(parent, data->GetRequestInfo()->GetScriptID(), ScriptData(objectList));
 	return kSuccess;
 }
 

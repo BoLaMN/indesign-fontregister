@@ -1,0 +1,411 @@
+// !$*UTF8*$!
+ {
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 46;
+	objects = {
+
+ /* Begin PBXBuildFile section */
+		AB0000000000000000001010 /* FontReg.fr in Sources */ = {isa = PBXBuildFile; fileRef = AB0000000000000000000001 /* FontReg.fr */; };
+		AB0000000000000000001011 /* FontReg.fr in Sources */ = {isa = PBXBuildFile; fileRef = AB0000000000000000000001 /* FontReg.fr */; };
+		AB0000000000000000001020 /* FontRegNoStrip.cpp in Sources */ = {isa = PBXBuildFile; fileRef = AB0000000000000000000002 /* FontRegNoStrip.cpp */; };
+		AB0000000000000000001021 /* FontRegNoStrip.cpp in Sources */ = {isa = PBXBuildFile; fileRef = AB0000000000000000000002 /* FontRegNoStrip.cpp */; };
+		AB0000000000000000001030 /* FontRegID.cpp in Sources */ = {isa = PBXBuildFile; fileRef = AB0000000000000000000003 /* FontRegID.cpp */; };
+		AB0000000000000000001031 /* FontRegID.cpp in Sources */ = {isa = PBXBuildFile; fileRef = AB0000000000000000000003 /* FontRegID.cpp */; };
+		AB0000000000000000001040 /* FontRegRegistry.cpp in Sources */ = {isa = PBXBuildFile; fileRef = AB0000000000000000000004 /* FontRegRegistry.cpp */; };
+		AB0000000000000000001041 /* FontRegRegistry.cpp in Sources */ = {isa = PBXBuildFile; fileRef = AB0000000000000000000004 /* FontRegRegistry.cpp */; };
+		AB0000000000000000001050 /* FontRegScriptProvider.cpp in Sources */ = {isa = PBXBuildFile; fileRef = AB0000000000000000000005 /* FontRegScriptProvider.cpp */; };
+		AB0000000000000000001051 /* FontRegScriptProvider.cpp in Sources */ = {isa = PBXBuildFile; fileRef = AB0000000000000000000005 /* FontRegScriptProvider.cpp */; };
+		AB0000000000000000001060 /* FontRegProxyScript.cpp in Sources */ = {isa = PBXBuildFile; fileRef = AB0000000000000000000006 /* FontRegProxyScript.cpp */; };
+		AB0000000000000000001061 /* FontRegProxyScript.cpp in Sources */ = {isa = PBXBuildFile; fileRef = AB0000000000000000000006 /* FontRegProxyScript.cpp */; };
+		AB0000000000000000001070 /* FontRegSweepIdleTask.cpp in Sources */ = {isa = PBXBuildFile; fileRef = AB0000000000000000000007 /* FontRegSweepIdleTask.cpp */; };
+		AB0000000000000000001071 /* FontRegSweepIdleTask.cpp in Sources */ = {isa = PBXBuildFile; fileRef = AB0000000000000000000007 /* FontRegSweepIdleTask.cpp */; };
+		AB0000000000000000001080 /* FontRegStartupShutdown.cpp in Sources */ = {isa = PBXBuildFile; fileRef = AB0000000000000000000008 /* FontRegStartupShutdown.cpp */; };
+		AB0000000000000000001081 /* FontRegStartupShutdown.cpp in Sources */ = {isa = PBXBuildFile; fileRef = AB0000000000000000000008 /* FontRegStartupShutdown.cpp */; };
+		AB0000000000000000001090 /* SDKPlugInEntrypoint.cpp in Sources */ = {isa = PBXBuildFile; fileRef = AB0000000000000000000009 /* SDKPlugInEntrypoint.cpp */; };
+		AB0000000000000000001091 /* SDKPlugInEntrypoint.cpp in Sources */ = {isa = PBXBuildFile; fileRef = AB0000000000000000000009 /* SDKPlugInEntrypoint.cpp */; };
+		AB00000000000000000010A0 /* InDesignModel.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AB0000000000000000000031 /* InDesignModel.framework */; };
+		AB00000000000000000010A1 /* libPublicPlugIn.a in Frameworks */ = {isa = PBXBuildFile; fileRef = AB0000000000000000000032 /* libPublicPlugIn.a */; };
+		AB00000000000000000010B0 /* InDesignModel.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AB0000000000000000000033 /* InDesignModel.framework */; };
+		AB00000000000000000010B1 /* libPublicPlugIn.a in Frameworks */ = {isa = PBXBuildFile; fileRef = AB0000000000000000000034 /* libPublicPlugIn.a */; };
+ /* End PBXBuildFile section */
+
+ /* Begin PBXBuildRule section */
+		AB0000000000000000002001 /* PBXBuildRule */ = {
+			isa = PBXBuildRule;
+			compilerSpec = com.apple.compilers.proxy.script;
+			filePatterns = "*.fr";
+ 			runOncePerArchitecture = 0;
+			fileType = pattern.proxy;
+			isEditable = 1;
+			outputFiles = (
+				"$(REZ_COLLECTOR_DIR)/$(INPUT_FILE_NAME).rsrc",
+			);
+			script = "$ID_SDK_ROOT/devtools/bin/odfrc-cmd -d DEBUG $ODFRC_ADDITIONAL_FLAGS -o \"$REZ_COLLECTOR_DIR/$INPUT_FILE_NAME.rsrc\" \"$INPUT_FILE_PATH\"";
+		};
+		AB0000000000000000002002 /* PBXBuildRule */ = {
+			isa = PBXBuildRule;
+			compilerSpec = com.apple.compilers.proxy.script;
+			filePatterns = "*.fr";
+ 			runOncePerArchitecture = 0;
+			fileType = pattern.proxy;
+			isEditable = 1;
+			outputFiles = (
+				"$(REZ_COLLECTOR_DIR)/$(INPUT_FILE_NAME).rsrc",
+			);
+			script = "$ID_SDK_ROOT/devtools/bin/odfrc-cmd -d RELEASE $ODFRC_ADDITIONAL_FLAGS -o \"$REZ_COLLECTOR_DIR/$INPUT_FILE_NAME.rsrc\" \"$INPUT_FILE_PATH\"";
+		};
+ /* End PBXBuildRule section */
+
+ /* Begin PBXFileReference section */
+		AB0000000000000000000001 /* FontReg.fr */ = {isa = PBXFileReference; indentWidth = 5; lastKnownFileType = text; name = FontReg.fr; path = ../../../source/fontregister/FontReg.fr; sourceTree = SOURCE_ROOT; };
+		AB0000000000000000000002 /* FontRegNoStrip.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = FontRegNoStrip.cpp; path = ../../../source/fontregister/FontRegNoStrip.cpp; sourceTree = SOURCE_ROOT; };
+		AB0000000000000000000003 /* FontRegID.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = FontRegID.cpp; path = ../../../source/fontregister/FontRegID.cpp; sourceTree = SOURCE_ROOT; };
+		AB0000000000000000000004 /* FontRegRegistry.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = FontRegRegistry.cpp; path = ../../../source/fontregister/FontRegRegistry.cpp; sourceTree = SOURCE_ROOT; };
+		AB0000000000000000000005 /* FontRegScriptProvider.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = FontRegScriptProvider.cpp; path = ../../../source/fontregister/FontRegScriptProvider.cpp; sourceTree = SOURCE_ROOT; };
+		AB0000000000000000000006 /* FontRegProxyScript.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = FontRegProxyScript.cpp; path = ../../../source/fontregister/FontRegProxyScript.cpp; sourceTree = SOURCE_ROOT; };
+		AB0000000000000000000007 /* FontRegSweepIdleTask.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = FontRegSweepIdleTask.cpp; path = ../../../source/fontregister/FontRegSweepIdleTask.cpp; sourceTree = SOURCE_ROOT; };
+		AB0000000000000000000008 /* FontRegStartupShutdown.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = FontRegStartupShutdown.cpp; path = ../../../source/fontregister/FontRegStartupShutdown.cpp; sourceTree = SOURCE_ROOT; };
+		AB0000000000000000000009 /* SDKPlugInEntrypoint.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = SDKPlugInEntrypoint.cpp; path = ../../../sdk/source/sdksamples/common/SDKPlugInEntrypoint.cpp; sourceTree = SOURCE_ROOT; };
+		AB000000000000000000000A /* FontRegID.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = FontRegID.h; path = ../../../source/fontregister/FontRegID.h; sourceTree = SOURCE_ROOT; };
+		AB000000000000000000000B /* FontRegRegistry.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = FontRegRegistry.h; path = ../../../source/fontregister/FontRegRegistry.h; sourceTree = SOURCE_ROOT; };
+		AB000000000000000000000C /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = ../../../sdk/source/sdksamples/common/Info.plist; sourceTree = SOURCE_ROOT; };
+		AB0000000000000000000021 /* _shared_build_settings/plugin.sdk.xcconfig */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = text.xcconfig; path = _shared_build_settings/plugin.sdk.xcconfig; sourceTree = SOURCE_ROOT; };
+		AB0000000000000000000022 /* _shared_build_settings/common_debug.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; path = _shared_build_settings/common_debug.xcconfig; sourceTree = "<group>"; };
+		AB0000000000000000000023 /* _shared_build_settings/common_release.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; path = _shared_build_settings/common_release.xcconfig; sourceTree = "<group>"; };
+		AB0000000000000000000031 /* InDesignModel.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = InDesignModel.framework; path = ../../../sdk/build/mac/release_cocoa64/packagefolder/contents/macos/InDesignModel.framework; sourceTree = SOURCE_ROOT; };
+		AB0000000000000000000032 /* libPublicPlugIn.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libPublicPlugIn.a; path = ../../../sdk/build/mac/release_cocoa64/packagefolder/contents/macos/libs/libPublicPlugIn.a; sourceTree = SOURCE_ROOT; };
+		AB0000000000000000000033 /* InDesignModel.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = InDesignModel.framework; path = ../../../sdk/build/mac/debug_cocoa64/packagefolder/contents/macos/InDesignModel.framework; sourceTree = SOURCE_ROOT; };
+		AB0000000000000000000034 /* libPublicPlugIn.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libPublicPlugIn.a; path = ../../../sdk/build/mac/debug_cocoa64/packagefolder/contents/macos/libs/libPublicPlugIn.a; sourceTree = SOURCE_ROOT; };
+		AB0000000000000000000041 /* FontReg.sdk.InDesignPlugin */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = FontReg.sdk.InDesignPlugin; sourceTree = BUILT_PRODUCTS_DIR; };
+		AB0000000000000000000042 /* FontReg.sdk.InDesignPlugin */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = FontReg.sdk.InDesignPlugin; sourceTree = BUILT_PRODUCTS_DIR; };
+ /* End PBXFileReference section */
+
+ /* Begin PBXFrameworksBuildPhase section */
+		AB0000000000000000003001 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AB00000000000000000010B0 /* InDesignModel.framework in Frameworks */,
+				AB00000000000000000010B1 /* libPublicPlugIn.a in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AB0000000000000000003002 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AB00000000000000000010A0 /* InDesignModel.framework in Frameworks */,
+				AB00000000000000000010A1 /* libPublicPlugIn.a in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+ /* End PBXFrameworksBuildPhase section */
+
+ /* Begin PBXGroup section */
+		AB0000000000000000004001 = {
+			isa = PBXGroup;
+			children = (
+				AB0000000000000000004002 /* Source */,
+				AB0000000000000000004003 /* Resources */,
+				AB0000000000000000004004 /* xcconfig */,
+				AB0000000000000000004005 /* InDesign Libraries */,
+				AB0000000000000000004006 /* Products */,
+				AB000000000000000000000C /* Info.plist */,
+			);
+			sourceTree = "<group>";
+		};
+		AB0000000000000000004002 /* Source */ = {
+			isa = PBXGroup;
+			children = (
+				AB0000000000000000000009 /* SDKPlugInEntrypoint.cpp */,
+				AB0000000000000000000002 /* FontRegNoStrip.cpp */,
+				AB000000000000000000000A /* FontRegID.h */,
+				AB0000000000000000000003 /* FontRegID.cpp */,
+				AB000000000000000000000B /* FontRegRegistry.h */,
+				AB0000000000000000000004 /* FontRegRegistry.cpp */,
+				AB0000000000000000000005 /* FontRegScriptProvider.cpp */,
+				AB0000000000000000000006 /* FontRegProxyScript.cpp */,
+				AB0000000000000000000007 /* FontRegSweepIdleTask.cpp */,
+				AB0000000000000000000008 /* FontRegStartupShutdown.cpp */,
+			);
+			name = Source;
+			sourceTree = "<group>";
+		};
+		AB0000000000000000004003 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				AB0000000000000000000001 /* FontReg.fr */,
+			);
+			name = Resources;
+			sourceTree = "<group>";
+		};
+		AB0000000000000000004004 /* xcconfig */ = {
+			isa = PBXGroup;
+			children = (
+				AB0000000000000000000021 /* _shared_build_settings/plugin.sdk.xcconfig */,
+				AB0000000000000000000022 /* _shared_build_settings/common_debug.xcconfig */,
+				AB0000000000000000000023 /* _shared_build_settings/common_release.xcconfig */,
+			);
+			name = xcconfig;
+			sourceTree = "<group>";
+		};
+		AB0000000000000000004005 /* InDesign Libraries */ = {
+			isa = PBXGroup;
+			children = (
+				AB0000000000000000000031 /* InDesignModel.framework */,
+				AB0000000000000000000032 /* libPublicPlugIn.a */,
+				AB0000000000000000000033 /* InDesignModel.framework */,
+				AB0000000000000000000034 /* libPublicPlugIn.a */,
+			);
+			name = "InDesign Libraries";
+			sourceTree = "<group>";
+		};
+		AB0000000000000000004006 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				AB0000000000000000000041 /* FontReg.sdk.InDesignPlugin */,
+				AB0000000000000000000042 /* FontReg.sdk.InDesignPlugin */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+ /* End PBXGroup section */
+
+ /* Begin PBXNativeTarget section */
+		AB0000000000000000005001 /* Debug_Cocoa64 */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = AB0000000000000000007002 /* Build configuration list for PBXNativeTarget "Debug_Cocoa64" */;
+			buildPhases = (
+				AB0000000000000000006001 /* Sources */,
+				AB0000000000000000003001 /* Frameworks */,
+				AB0000000000000000008001 /* Resources */,
+				AB0000000000000000009001 /* ShellScript */,
+			);
+			buildRules = (
+				AB0000000000000000002001 /* PBXBuildRule */,
+			);
+			dependencies = (
+			);
+			name = Debug_Cocoa64;
+			productName = Debug;
+			productReference = AB0000000000000000000042 /* FontReg.sdk.InDesignPlugin */;
+			productType = "com.apple.product-type.framework";
+		};
+		AB0000000000000000005002 /* Release_Cocoa64 */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = AB0000000000000000007003 /* Build configuration list for PBXNativeTarget "Release_Cocoa64" */;
+			buildPhases = (
+				AB0000000000000000006002 /* Sources */,
+				AB0000000000000000003002 /* Frameworks */,
+				AB0000000000000000008002 /* Resources */,
+				AB0000000000000000009002 /* ShellScript */,
+			);
+			buildRules = (
+				AB0000000000000000002002 /* PBXBuildRule */,
+			);
+			dependencies = (
+			);
+			name = Release_Cocoa64;
+			productName = Release;
+			productReference = AB0000000000000000000041 /* FontReg.sdk.InDesignPlugin */;
+			productType = "com.apple.product-type.framework";
+		};
+ /* End PBXNativeTarget section */
+
+ /* Begin PBXProject section */
+		AB000000000000000000A001 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+			};
+			buildConfigurationList = AB0000000000000000007001 /* Build configuration list for PBXProject "FontReg.sdk" */;
+			compatibilityVersion = "Xcode 3.2";
+			developmentRegion = English;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				English,
+				Japanese,
+				French,
+				German,
+			);
+			mainGroup = AB0000000000000000004001;
+			productRefGroup = AB0000000000000000004006 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				AB0000000000000000005001 /* Debug_Cocoa64 */,
+				AB0000000000000000005002 /* Release_Cocoa64 */,
+			);
+		};
+ /* End PBXProject section */
+
+ /* Begin PBXResourcesBuildPhase section */
+		AB0000000000000000008001 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AB0000000000000000008002 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+ /* End PBXResourcesBuildPhase section */
+
+ /* Begin PBXShellScriptBuildPhase section */
+		AB0000000000000000009001 /* ShellScript */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			outputPaths = (
+				$REZ_COLLECTOR_DIR/resourcesCopied.txt,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = $ID_SDK_ROOT/build/mac/packagescripts/copyResources.sh;
+			showEnvVarsInLog = 0;
+		};
+		AB0000000000000000009002 /* ShellScript */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			outputPaths = (
+				$REZ_COLLECTOR_DIR/resourcesCopied.txt,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = $ID_SDK_ROOT/build/mac/packagescripts/copyResources.sh;
+			showEnvVarsInLog = 0;
+		};
+ /* End PBXShellScriptBuildPhase section */
+
+ /* Begin PBXSourcesBuildPhase section */
+		AB0000000000000000006001 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AB0000000000000000001011 /* FontReg.fr in Sources */,
+				AB0000000000000000001021 /* FontRegNoStrip.cpp in Sources */,
+				AB0000000000000000001031 /* FontRegID.cpp in Sources */,
+				AB0000000000000000001041 /* FontRegRegistry.cpp in Sources */,
+				AB0000000000000000001051 /* FontRegScriptProvider.cpp in Sources */,
+				AB0000000000000000001061 /* FontRegProxyScript.cpp in Sources */,
+				AB0000000000000000001071 /* FontRegSweepIdleTask.cpp in Sources */,
+				AB0000000000000000001081 /* FontRegStartupShutdown.cpp in Sources */,
+				AB0000000000000000001091 /* SDKPlugInEntrypoint.cpp in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AB0000000000000000006002 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AB0000000000000000001010 /* FontReg.fr in Sources */,
+				AB0000000000000000001020 /* FontRegNoStrip.cpp in Sources */,
+				AB0000000000000000001030 /* FontRegID.cpp in Sources */,
+				AB0000000000000000001040 /* FontRegRegistry.cpp in Sources */,
+				AB0000000000000000001050 /* FontRegScriptProvider.cpp in Sources */,
+				AB0000000000000000001060 /* FontRegProxyScript.cpp in Sources */,
+				AB0000000000000000001070 /* FontRegSweepIdleTask.cpp in Sources */,
+				AB0000000000000000001080 /* FontRegStartupShutdown.cpp in Sources */,
+				AB0000000000000000001090 /* SDKPlugInEntrypoint.cpp in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+ /* End PBXSourcesBuildPhase section */
+
+ /* Begin XCBuildConfiguration section */
+		AB000000000000000000B001 /* Default */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = AB0000000000000000000021 /* _shared_build_settings/plugin.sdk.xcconfig */;
+			buildSettings = {
+                CODE_SIGN_IDENTITY="";
+				BUILT_PRODUCTS_DIR = "$(ID_BUILT_SDK_SAMPLES_DIR)";
+				GCC_WARN_UNUSED_PARAMETER = YES;
+				HEADER_SEARCH_PATHS = (
+					"$(HEADER_SEARCH_PATHS)",
+					$ID_SDK_ROOT/source/public/interfaces/tables,
+					$ID_SDK_ROOT/source/public/components/widgetbin/includes,
+					$ID_SDK_ROOT/source/public/interfaces/workgroup,
+					$ID_SDK_ROOT/source/public/interfaces/interactive,
+					$ID_SDK_ROOT/source/public/interfaces/interactive/ui,
+					$ID_SDK_ROOT/source/public/interfaces/colormgmt,
+					$ID_SDK_ROOT/source/public/interfaces/incopy,
+					$ID_SDK_ROOT/source/public/interfaces/cjk,
+					$ID_SDK_ROOT/source/public/interfaces/preflight,
+					$ID_SDK_ROOT/source/public/facades/graphics,
+					$ID_SDK_ROOT/source/public/facades/text,
+					$ID_SDK_ROOT/source/public/facades/layout,
+					$ID_SDK_ROOT/source/public/components/publiclib/plugins,
+					$ID_SDK_ROOT/source/public/components/publiclib/files,
+					$ID_SDK_ROOT/source/public/components/publiclib/objectmodel,
+					$ID_SDK_ROOT/source/sdksamples/common,
+					$ID_SDK_ROOT/external/afl/includes,
+					../../../source/fontregister,
+				);
+				INFOPLIST_FILE = $ID_SDK_ROOT/source/sdksamples/common/Info.plist;
+				INFOPLIST_PREPROCESS = YES;
+				PLC_OUTPUT_TYPE = InDa;
+				PRODUCT_NAME = FontReg.sdk;
+			};
+			name = Default;
+		};
+		AB000000000000000000B002 /* Default */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = AB0000000000000000000022 /* _shared_build_settings/common_debug.xcconfig */;
+			buildSettings = {
+                CODE_SIGN_IDENTITY="";
+				PLC_GENERATE_PKGINFO_FILE = "$(inherited)";
+			};
+			name = Default;
+		};
+		AB000000000000000000B003 /* Default */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = AB0000000000000000000023 /* _shared_build_settings/common_release.xcconfig */;
+			buildSettings = {
+                CODE_SIGN_IDENTITY="";
+			};
+			name = Default;
+		};
+ /* End XCBuildConfiguration section */
+
+ /* Begin XCConfigurationList section */
+		AB0000000000000000007001 /* Build configuration list for PBXProject "FontReg.sdk" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AB000000000000000000B001 /* Default */,
+			);
+			defaultConfigurationIsVisible = 1;
+			defaultConfigurationName = Default;
+		};
+		AB0000000000000000007002 /* Build configuration list for PBXNativeTarget "Debug_Cocoa64" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AB000000000000000000B002 /* Default */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Default;
+		};
+		AB0000000000000000007003 /* Build configuration list for PBXNativeTarget "Release_Cocoa64" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AB000000000000000000B003 /* Default */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Default;
+		};
+ /* End XCConfigurationList section */
+	};
+	rootObject = AB000000000000000000A001 /* Project object */;
+ }
