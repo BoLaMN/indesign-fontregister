@@ -1,6 +1,6 @@
 name: Build
 
-# Builds both plug-ins for macOS and Windows, and publishes a release when a
+# Builds the plug-in for macOS and Windows, and publishes a release when a
 # v* tag is pushed.
 #
 # Everything GitHub's runners need is already there except the InDesign SDK,
