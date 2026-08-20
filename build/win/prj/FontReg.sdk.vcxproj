@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Model plug-in: session font registration, scripting, idle sweep.
+
+  Build with the SDK paths passed as globals; see FontReg.common.props and
+  BUILD.md for why they cannot simply be set here.
+-->
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+
+  <PropertyGroup Label="Globals">
+    <ProjectName>FontReg</ProjectName>
+    <ProjectGuid>{B31E6D22-9C4A-4F0E-8D57-2A6C31E90F02}</ProjectGuid>
+    <WindowsTargetPlatformVersion>10.0.26100.0</WindowsTargetPlatformVersion>
+    <!-- Fallback for opening the project in Visual Studio. The SDK's property
+         sheets override it, so command-line builds must pass /p:ID_SDK_DIR. -->
+    <ID_SDK_DIR>..\..\..\sdk</ID_SDK_DIR>
+  </PropertyGroup>
+
+
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+
+  <PropertyGroup Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+
+  <ImportGroup Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <!-- The SDK's sheets bring in the link lists and library locations. -->
+    <Import Project="$(ID_SDK_DIR)\build\win\prj\$(Configuration)X64.sdk.props" />
+  </ImportGroup>
+
+  <PropertyGroup>
+    <PluginSourceDir>..\..\..\source\fontregister</PluginSourceDir>
+    <PluginExtraIncludes>$(ID_SDK_DIR)\source\open\includes\architecture</PluginExtraIncludes>
+    <PluginLinkList>$(MODEL_PLUGIN_LINKLIST);$(AFLLib);$(BoostDateTimeLib)</PluginLinkList>
+  </PropertyGroup>
+
+  <!-- Imported last: it uses the properties just set, and the link lists the
+       SDK's sheets define. -->
+  <Import Project="FontReg.common.props" />
+
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+</Project>

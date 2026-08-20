@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Settings shared by both plug-in projects.
+
+  Each project sets PluginSourceDir, PluginExtraIncludes and PluginLinkList,
+  then imports this after the SDK's own property sheets.
+
+  merge_res.cmd takes the .res basename, which the resource compiler derives
+  from the .rc, so it is just $(ProjectName). The SDK's CustomDataLink sample
+  passes "CusDtLnk" here, which is the CustomDataLink sample's prefix and finds
+  nothing; it prints usage and exits 0, so the build looks fine while the
+  VERSIONINFO resource never makes it into the plug-in.
+
+  The include lists below came from the SDK's SDKCPPOptions.rsp and
+  SDKODFRCOptions.rsp, with the leading ..\..\.. swapped for $(ID_SDK_DIR).
+  They live here rather than in a response file because response files are
+  handed to the tool verbatim, so MSBuild macros do not expand in them and the
+  paths would have to be right relative to the project.
+
+  ID_SDK_DIR must be passed on the command line:
+
+      msbuild ... /p:ID_SDK_DIR=<path to SDK>
+
+  The SDK's property sheets set it themselves, relative to their own directory,
+  and an imported sheet outranks a PropertyGroup here. Only a global wins.
+-->
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <PropertyGroup>
+    <!-- ODFRC and the resource merge scripts. -->
+    <ExecutablePath>$(ID_SDK_DIR)\devtools\bin;$(ExecutablePath)</ExecutablePath>
+
+    <OutDir>..\$(Configuration.ToLower())x64\sdk\</OutDir>
+    <IntDir>..\obj$(Configuration.Substring(0,1))x64\$(ProjectName)\</IntDir>
+    <TargetName>$(ProjectName).sdk</TargetName>
+    <TargetExt>.pln</TargetExt>
+
+    <SdkIncludeDirs>$(ID_SDK_DIR)\source\precomp\msvc;$(ID_SDK_DIR)\source\public\interfaces\xmedia;$(ID_SDK_DIR)\source\public\interfaces\ui;$(ID_SDK_DIR)\source\public\interfaces\tables;$(ID_SDK_DIR)\source\public\interfaces\text;$(ID_SDK_DIR)\source\public\interfaces\graphics;$(ID_SDK_DIR)\source\public\libs\widgetbin\includes;$(ID_SDK_DIR)\source\public\interfaces\workgroup;$(ID_SDK_DIR)\source\public\interfaces\interactive;$(ID_SDK_DIR)\source\public\interfaces\interactive\ui;$(ID_SDK_DIR)\source\public\interfaces\colormgmt;$(ID_SDK_DIR)\source\public\interfaces\contentdropper;$(ID_SDK_DIR)\source\public\interfaces\utils;$(ID_SDK_DIR)\source\public\interfaces\incopy;$(ID_SDK_DIR)\source\public\interfaces\layout;$(ID_SDK_DIR)\source\public\interfaces\architecture;$(ID_SDK_DIR)\source\public\interfaces\cjk;$(ID_SDK_DIR)\source\public\interfaces\sharedcontent;$(ID_SDK_DIR)\source\public\interfaces\preflight;$(ID_SDK_DIR)\source\precomp\common;$(ID_SDK_DIR)\source\public\includes;$(ID_SDK_DIR)\source\public\libs\publiclib\plugins;$(ID_SDK_DIR)\source\public\libs\publiclib\files;$(ID_SDK_DIR)\source\public\libs\publiclib\objectmodel;$(ID_SDK_DIR)\source\sdksamples\common;$(ID_SDK_DIR)\external\afl\includes;$(ID_SDK_DIR)\external\dva\third_party\adobe_source_libraries;$(ID_SDK_DIR)\external\intel_tbb\win\include;$(ID_SDK_DIR)\external\icu\include;$(ID_SDK_DIR)\source\open\includes\widgets;$(ID_SDK_DIR)\source\open\includes\architecture</SdkIncludeDirs>
+    <SdkOdfrcIncludes>-i "$(ID_SDK_DIR)\source\precomp\msvc" -i "$(ID_SDK_DIR)\source\public\interfaces\xmedia" -i "$(ID_SDK_DIR)\source\public\interfaces\ui" -i "$(ID_SDK_DIR)\source\public\interfaces\tables" -i "$(ID_SDK_DIR)\source\public\interfaces\text" -i "$(ID_SDK_DIR)\source\public\interfaces\graphics" -i "$(ID_SDK_DIR)\source\public\libs\widgetbin\includes" -i "$(ID_SDK_DIR)\source\public\interfaces\workgroup" -i "$(ID_SDK_DIR)\source\public\interfaces\interactive" -i "$(ID_SDK_DIR)\source\public\interfaces\interactive\ui" -i "$(ID_SDK_DIR)\source\public\interfaces\colormgmt" -i "$(ID_SDK_DIR)\source\public\interfaces\utils" -i "$(ID_SDK_DIR)\source\public\interfaces\incopy" -i "$(ID_SDK_DIR)\source\public\interfaces\layout" -i "$(ID_SDK_DIR)\source\public\interfaces\architecture" -i "$(ID_SDK_DIR)\source\public\interfaces\cjk" -i "$(ID_SDK_DIR)\source\public\interfaces\preflight" -i "$(ID_SDK_DIR)\source\public\facades\text" -i "$(ID_SDK_DIR)\source\public\facades\graphics" -i "$(ID_SDK_DIR)\source\public\facades\layout" -i "$(ID_SDK_DIR)\source\precomp\common" -i "$(ID_SDK_DIR)\source\public\includes" -i "$(ID_SDK_DIR)\source\public\widget\includes" -i "$(ID_SDK_DIR)\source\public\libs\publiclib\plugins" -i "$(ID_SDK_DIR)\source\public\libs\publiclib\files" -i "$(ID_SDK_DIR)\source\public\libs\publiclib\objectmodel" -i "$(ID_SDK_DIR)\source\sdksamples\common"</SdkOdfrcIncludes>
+  </PropertyGroup>
+
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalOptions>/vmg %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalIncludeDirectories>$(PluginSourceDir);$(PluginExtraIncludes);$(SdkIncludeDirs);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_DEPRECATE;STRICT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>VCPlugInHeaders.h</PrecompiledHeaderFile>
+      <PrecompiledHeaderOutputFile>$(IntDir)$(ProjectName).pch</PrecompiledHeaderOutputFile>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+    </ClCompile>
+
+    <ResourceCompile>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_DEPRECATE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <Culture>0x0409</Culture>
+      <AdditionalIncludeDirectories>$(PluginSourceDir);$(ID_SDK_DIR)\source\precomp\msvc;$(ID_SDK_DIR)\source\public\includes;$(ID_SDK_DIR)\source\sdksamples\common;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+
+    <!-- ODFRC writes .idrc files into the intermediate directory; these two
+         steps merge them into the plug-in and put the originals back. A .pln
+         without them loads as "not a valid plug-in". -->
+    <PreLinkEvent>
+      <Command>merge_res.cmd "$(IntDir)" $(ProjectName) &amp; echo Deleting old resources... &amp; del /f /s "$(TargetDir)($(TargetName) Resources)\"*.idrc &gt; $(IntDir)prevDeletedResources.txt &amp; xcopy /Q /E "$(IntDir)"*.idrc "$(TargetDir)($(TargetName) Resources)\" /Y</Command>
+    </PreLinkEvent>
+    <PostBuildEvent>
+      <Command>restore_res.cmd "$(IntDir)" $(ProjectName)</Command>
+    </PostBuildEvent>
+
+    <Link>
+      <AdditionalOptions>/IGNORE:4089 %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalDependencies>$(PluginLinkList);%(AdditionalDependencies)</AdditionalDependencies>
+      <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
+      <ProgramDatabaseFile>$(OutDir)$(ProjectName).pdb</ProgramDatabaseFile>
+      <ImportLibrary>$(IntDir)$(ProjectName).lib</ImportLibrary>
+    </Link>
+  </ItemDefinitionGroup>
+
+  <ItemDefinitionGroup Condition="'$(Configuration)'=='Debug'">
+    <ClCompile><PreprocessorDefinitions>DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions></ClCompile>
+    <ResourceCompile><PreprocessorDefinitions>DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions></ResourceCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)'=='Release'">
+    <ClCompile>
+      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <StringPooling>true</StringPooling>
+    </ClCompile>
+    <ResourceCompile><PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions></ResourceCompile>
+  </ItemDefinitionGroup>
+
+  <!-- Sources. Globs mean adding a file needs no project edit. -->
+  <ItemGroup>
+    <ClCompile Include="$(PluginSourceDir)\*.cpp" />
+    <ClInclude Include="$(PluginSourceDir)\*.h" />
+    <ClCompile Include="$(ID_SDK_DIR)\source\public\libs\publiclib\statics\PlugInStatics.cpp" />
+    <ClCompile Include="$(ID_SDK_DIR)\source\sdksamples\common\SDKPlugInEntrypoint.cpp" />
+    <ClCompile Include="$(ID_SDK_DIR)\source\precomp\msvc\VCPlugInHeaders.cpp">
+      <PrecompiledHeader>Create</PrecompiledHeader>
+    </ClCompile>
+    <ResourceCompile Include="$(PluginSourceDir)\$(ProjectName).rc" />
+    <None Include="$(PluginSourceDir)\*_enUS.fr" />
+    <None Include="$(PluginSourceDir)\*_jaJP.fr" />
+  </ItemGroup>
+
+  <!-- The main .fr is compiled by ODFRC; the localised ones are #included by it.
+       TriggerResourceDeps.obj is listed as an input so a source change forces
+       the resources to rebuild. -->
+  <ItemGroup>
+    <CustomBuild Include="$(PluginSourceDir)\$(ProjectName).fr">
+      <Command>odfrc $(ODFRC_ADDITIONAL_FLAGS) "%(FullPath)" -o "$(IntDir)%(Filename).fres" $(OdfrcConfigFlag) -i "$(PluginSourceDir)" $(SdkOdfrcIncludes)</Command>
+      <AdditionalInputs>$(IntDir)TriggerResourceDeps.obj;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs>$(IntDir)%(Filename).fres;%(Outputs)</Outputs>
+    </CustomBuild>
+  </ItemGroup>
+  <PropertyGroup>
+    <OdfrcConfigFlag Condition="'$(Configuration)'=='Debug'">-d DEBUG</OdfrcConfigFlag>
+  </PropertyGroup>
+
+</Project>
