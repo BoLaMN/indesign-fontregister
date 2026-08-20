@@ -237,16 +237,9 @@ resource VersionedScriptElementInfo(1)
 			kNoAttributeClass,
 		}
 
-		Property
-		{
-			kFontRegIsValidPropertyScriptElement,
-			p_FontRegIsValid,
-			"is valid",
-			"False once this registration has been unregistered (explicitly or by the stale sweep).",
-			BoolType,
-			{}
-			kNoAttributeClass,
-		}
+		/* No isValid property: ExtendScript's built-in isValid (specifier
+		   validity) shadows any same-named property, and unregistered
+		   registrations report deleted, so the built-in does the job. */
 
 		/* register methods live on the application object */
 		Provider
@@ -269,7 +262,6 @@ resource VersionedScriptElementInfo(1)
 				Method{ kFontRegUnregisterMethodScriptElement },
 				Property{ kFontRegFontNamesPropertyScriptElement, kReadOnly },
 				Property{ kFontRegSourcePathPropertyScriptElement, kReadOnly },
-				Property{ kFontRegIsValidPropertyScriptElement, kReadOnly },
 			}
 		}
 	}

@@ -4,7 +4,9 @@
 //
 //  Scripting surface: app.registerFont(), app.registerFontFolder(),
 //  app.fontRegistrations, and the FontRegistration object's fontNames /
-//  sourcePath / isValid properties and unregister() method.
+//  sourcePath properties and unregister() method. (isValid is ExtendScript's
+//  built-in specifier-validity property; unregistered registrations report
+//  deleted, which makes it read false.)
 //
 //  One provider serves both sides: it is registered against the Application
 //  object for the two register methods, and as the represent-provider for the
@@ -122,7 +124,7 @@ ErrorCode FontRegScriptProvider::GetObjectByID(IScriptRequestData* data, IScript
 
 	ScriptList objectList;
 	const FontRegRegistration* reg = FontRegRegistry::Instance().Find(id);
-	if (reg != nil)
+	if (reg != nil && reg->fValid)
 	{
 		InterfacePtr<IScript> proxy(QueryRegistrationProxy(data, parent, reg->fId));
 		if (proxy == nil)
@@ -190,7 +192,6 @@ ErrorCode FontRegScriptProvider::AccessProperty(ScriptID propID, IScriptRequestD
 	{
 		case p_FontRegFontNames:
 		case p_FontRegSourcePath:
-		case p_FontRegIsValid:
 			return AccessRegistrationProperty(propID, data, script);
 		default:
 			return RepresentScriptProvider::AccessProperty(propID, data, script);
@@ -228,9 +229,6 @@ ErrorCode FontRegScriptProvider::AccessRegistrationProperty(ScriptID propID, ISc
 			out.SetPMString(value);
 			break;
 		}
-		case p_FontRegIsValid:
-			out.SetBoolean(reg->fValid ? kTrue : kFalse);
-			break;
 	}
 	data->AppendReturnData(script, propID, out);
 	return kSuccess;

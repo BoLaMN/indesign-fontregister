@@ -2,17 +2,29 @@
 //
 //  FontRegRegistry.cpp
 //
+//  Mechanism: fonts copied into a session subfolder of InDesign's per-user
+//  CompositeFont folder (ICompositeFontMgr::GetCompositeFontFolder) become
+//  installable SYNCHRONOUSLY -- that folder is one of the few the font
+//  system's incremental seed scanner (CurrentFontSystemSeed(kTrue)) actually
+//  checksums. Nothing else works mid-script: AddDirectory'd folders, OS font
+//  folders, and CoreText process registration are all invisible until event-
+//  loop idle, which never happens while a script runs. (All verified
+//  empirically against InDesign 21.5; app.updateFonts() uses the same seed
+//  machinery.)
+//
 //========================================================================================
 
 #include "VCPlugInHeaders.h"
 
+#include "ICompositeFontMgr.h"
 #include "IFontMgr.h"
 #include "IFontGroup.h"
 #include "IPMFont.h"
 #include "ISession.h"
+#include "IWorkspace.h"
 
+#include "CompositeFontMgrID.h"
 #include "FileUtils.h"
-#include "StringUtils.h"
 
 #include "FontRegRegistry.h"
 
@@ -71,6 +83,18 @@ void SnapshotFontNames(IFontMgr* fontMgr, std::set<std::string>& outNames)
 	}
 }
 
+/** Make the font system notice folder changes, synchronously. The seed scan
+    is incremental (one folder per call), so poll until the seed moves or a
+    bounded number of calls pass, then force the list rebuild. */
+void RescanFonts(IFontMgr* fontMgr)
+{
+	const int32 oldSeed = fontMgr->CurrentFontSystemSeed(kFalse);
+	int32 newSeed = oldSeed;
+	for (int i = 0; i < 50 && newSeed == oldSeed; ++i)
+		newSeed = fontMgr->CurrentFontSystemSeed(kTrue);
+	fontMgr->ForceUpdateFontSystem();
+}
+
 } // anonymous namespace
 
 FontRegRegistry& FontRegRegistry::Instance()
@@ -84,13 +108,24 @@ bool FontRegRegistry::EnsureTempDir(PMString& outError)
 	if (fDirRegistered)
 		return true;
 
-	std::error_code ec;
-	fs::path dir = fs::temp_directory_path(ec);
-	if (ec)
+	InterfacePtr<ICompositeFontMgr> compFontMgr(GetExecutionContextSession(), IID_ICOMPOSITEFONTMGR);
+	if (compFontMgr == nil)
 	{
-		outError = "FontRegister: no usable temp directory.";
+		InterfacePtr<IWorkspace> workspace(GetExecutionContextSession()->QueryWorkspace());
+		if (workspace != nil)
+			compFontMgr.reset((ICompositeFontMgr*)workspace->QueryInterface(IID_ICOMPOSITEFONTMGR));
+	}
+	if (compFontMgr == nil)
+	{
+		outError = "FontRegister: the composite font manager is unavailable.";
 		return false;
 	}
+
+	IDFile folder;
+	compFontMgr->GetCompositeFontFolder(&folder);
+	const PMString folderPath = FileUtils::SysFileToPMString(folder);
+
+	fs::path dir = ToPath(std::string(folderPath.GetUTF8String()));
 	dir /= "FontRegister-" + std::to_string(
 		static_cast<unsigned long>(
 #ifdef WINDOWS
@@ -99,6 +134,7 @@ bool FontRegRegistry::EnsureTempDir(PMString& outError)
 			getpid()
 #endif
 		));
+	std::error_code ec;
 	fs::create_directories(dir, ec);
 	if (ec)
 	{
@@ -106,14 +142,6 @@ bool FontRegRegistry::EnsureTempDir(PMString& outError)
 		return false;
 	}
 	fTempDir = FromPath(dir);
-
-	InterfacePtr<IFontMgr> fontMgr(GetExecutionContextSession(), UseDefaultIID());
-	if (fontMgr == nil)
-	{
-		outError = "FontRegister: the font manager is unavailable.";
-		return false;
-	}
-	fontMgr->AddDirectory(FileUtils::PMStringToSysFile(PMString(fTempDir.c_str())));
 	fDirRegistered = true;
 	return true;
 }
@@ -199,7 +227,7 @@ int32 FontRegRegistry::Register(const PMString& sourcePath, bool isFolder, PMStr
 			reg.fTempFiles.push_back(FromPath(dst));
 		}
 
-		fontMgr->ForceUpdateFontSystem();
+		RescanFonts(fontMgr);
 
 		std::set<std::string> after;
 		SnapshotFontNames(fontMgr, after);
@@ -213,7 +241,7 @@ int32 FontRegRegistry::Register(const PMString& sourcePath, bool isFolder, PMStr
 			// usable font file. Clean up rather than leaving a dud in the dir.
 			for (const std::string& f : reg.fTempFiles)
 				fs::remove(ToPath(f), ec);
-			fontMgr->ForceUpdateFontSystem();
+			RescanFonts(fontMgr);
 			outError = "FontRegister: not a usable font file: ";
 			outError.Append(sourcePath);
 			return 0;
@@ -242,7 +270,7 @@ bool FontRegRegistry::Unregister(int32 id)
 		{
 			InterfacePtr<IFontMgr> fontMgr(GetExecutionContextSession(), UseDefaultIID());
 			if (fontMgr != nil)
-				fontMgr->ForceUpdateFontSystem();
+				RescanFonts(fontMgr);
 		}
 		return true;
 	}

@@ -4,9 +4,11 @@ An InDesign plug-in that lets a script register font files at runtime, so a
 job package (script + fonts) can run against InDesign Server without the
 fonts being installed on the machine.
 
-Registration is session-scoped: fonts are copied into a private temp
-directory that InDesign's font system scans, and everything evaporates when
-the process exits. Nothing touches the system or InDesign fonts folders.
+Registration is session-scoped: fonts are copied into a per-process
+subfolder of InDesign's per-user CompositeFont folder -- the only location
+the font system rescans synchronously mid-script -- and everything
+evaporates at unregister or process exit. System font folders are never
+touched.
 
 Structured after [indesign-httplink](../indesign-http), which is the source
 of truth for the build and CI patterns.
@@ -19,7 +21,7 @@ Same code from `.jsx`, `.idjs` and Server:
 var reg = app.registerFontFolder(File($.fileName).parent.fsName + "/Fonts");
 reg.fontNames;     // ["Foo\tBold", ...] -- what actually installed
 reg.sourcePath;    // the path you passed in
-reg.isValid;       // false after unregister()
+reg.isValid;       // built-in specifier validity; false after unregister()
 
 // fonts are usable on the next line
 var f = app.fonts.itemByName(reg.fontNames[0]);

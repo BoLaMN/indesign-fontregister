@@ -27,9 +27,9 @@ public:
 	    index and returns index form). */
 	virtual ScriptObject GetScriptObject(const RequestContext& context) const;
 
-	/** Registrations are never destroyed while the process lives -- an
-	    unregistered one just reports isValid == false -- so the object exists
-	    as long as the registry knows the id. */
+	/** An unregistered registration reports deleted. ExtendScript's built-in
+	    isValid property (which shadows any same-named plug-in property) then
+	    returns false for held handles, which is exactly the contract. */
 	virtual bool16 HasBeenDeleted(const RequestContext& context);
 };
 
@@ -49,5 +49,6 @@ bool16 FontRegProxyScript::HasBeenDeleted(const RequestContext& context)
 	InterfacePtr<const IIntData> idData(this, UseDefaultIID());
 	if (idData == nil)
 		return kTrue;
-	return FontRegRegistry::Instance().Find(idData->GetInt()) == nil ? kTrue : kFalse;
+	const FontRegRegistration* reg = FontRegRegistry::Instance().Find(idData->GetInt());
+	return (reg != nil && reg->fValid) ? kFalse : kTrue;
 }

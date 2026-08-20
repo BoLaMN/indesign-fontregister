@@ -50,8 +50,8 @@ returns the existing registration instead of double-installing.
 |---|---|
 | `fontNames` | what actually installed, as `"Family\tStyle"` strings — the exact form `app.fonts.itemByName()` takes. Computed by diffing the font system across the rescan, so pre-installed fonts don't appear. |
 | `sourcePath` | the path passed to the register call |
-| `isValid` | `false` once unregistered |
-| `unregister()` | removes exactly the fonts this call installed; a second call is a no-op |
+| `isValid` | ExtendScript's built-in specifier validity: `false` once unregistered |
+| `unregister()` | removes exactly the fonts this call installed; the handle is then a deleted object, so further use throws |
 
 ### `app.fontRegistrations`
 
@@ -62,9 +62,10 @@ The session's active registrations, as a normal collection (`length`,
 
 - **Synchronous** -- registration returns after the font system rescan, so
   the next script line can use the fonts.
-- **Session-scoped** -- everything lives in a per-process temp directory and
-  is gone when InDesign / the Server exits. System and InDesign fonts
-  folders are never touched.
+- **Session-scoped** -- copies live in a per-process subfolder of InDesign's
+  per-user CompositeFont folder (the one folder the font system's scanner
+  checksums synchronously; nothing else works mid-script) and are removed at
+  unregister/shutdown. System font folders are never touched.
 - **Unregistering** removes the backing files and rescans; open documents
   using the fonts see them become missing fonts, like any uninstall.
 

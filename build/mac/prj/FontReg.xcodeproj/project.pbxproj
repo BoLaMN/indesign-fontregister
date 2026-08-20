@@ -356,6 +356,7 @@
 				);
 				INFOPLIST_FILE = $ID_SDK_ROOT/source/sdksamples/common/Info.plist;
 				INFOPLIST_PREPROCESS = YES;
+				OTHER_LDFLAGS = "$(inherited) -framework CoreText -framework CoreFoundation";
 				PLC_OUTPUT_TYPE = InDa;
 				PRODUCT_NAME = FontReg.sdk;
 			};

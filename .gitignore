@@ -21,3 +21,7 @@
 .vs/
 
 .DS_Store
+
+# Test output
+/test/test-output.png
+/test/test-result.txt
