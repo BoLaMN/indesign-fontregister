@@ -46,7 +46,8 @@ public:
 	bool Unregister(int32 id);
 
 	/** Unregister every active registration whose sourcePath no longer
-	    exists. The proxy deleting a job dir is the signal the job is done. */
+	    exists (the proxy deleting a job dir is the signal the job is done),
+	    and retry files whose removal was blocked by the OS. */
 	void SweepStale();
 
 	/** Best-effort removal of the temp dir at shutdown. */
@@ -62,8 +63,15 @@ private:
 	bool EnsureTempDir(PMString& outError);
 	int32 FindActiveBySource(const PMString& sourcePath) const;
 
+	/** Delete a backing copy, verified: on Windows a font file CoolType has
+	    mapped can refuse deletion, so fall back to moving it out of the
+	    scanned tree; a file that resists both lands on fPendingRemovals. */
+	bool RemoveBackingFile(const std::string& utf8Path);
+
 	std::vector<FontRegRegistration> fRegs;
+	std::vector<std::string> fPendingRemovals;	// UTF-8 paths still to delete
 	std::string fTempDir;		// UTF-8; empty until first use
+	std::string fTrashDir;		// UTF-8; outside the scanned tree
 	bool fDirRegistered = false;
 	int32 fNextId = 1;
 };

@@ -142,8 +142,42 @@ bool FontRegRegistry::EnsureTempDir(PMString& outError)
 		return false;
 	}
 	fTempDir = FromPath(dir);
+
+	// The trash lives OUTSIDE the CompositeFont tree (which is scanned
+	// recursively) but on the same volume, so a locked file can be renamed
+	// into it without a cross-volume copy.
+	fs::path trash = dir.parent_path().parent_path() /
+		("FontRegister-trash-" + std::string(FromPath(dir.filename())).substr(13));
+	fs::create_directories(trash, ec);
+	if (!ec)
+		fTrashDir = FromPath(trash);
+
 	fDirRegistered = true;
 	return true;
+}
+
+bool FontRegRegistry::RemoveBackingFile(const std::string& utf8Path)
+{
+	const fs::path p = ToPath(utf8Path);
+	std::error_code ec;
+
+	fs::remove(p, ec);
+	if (!fs::exists(p, ec))
+		return true;
+
+	// Windows refuses to delete a font file the font engine has mapped, but
+	// usually allows a rename. Moving it out of the scanned tree changes the
+	// folder checksum, so the rescan still uninstalls the font.
+	if (!fTrashDir.empty())
+	{
+		const fs::path dst = ToPath(fTrashDir) / p.filename();
+		fs::rename(p, dst, ec);
+		if (!ec && !fs::exists(p, ec))
+			return true;
+	}
+
+	fPendingRemovals.push_back(utf8Path);
+	return false;
 }
 
 int32 FontRegRegistry::FindActiveBySource(const PMString& sourcePath) const
@@ -261,9 +295,8 @@ bool FontRegRegistry::Unregister(int32 id)
 		if (!reg.fValid)
 			return true;	// double unregister() is a no-op
 
-		std::error_code ec;
 		for (const std::string& f : reg.fTempFiles)
-			fs::remove(ToPath(f), ec);
+			RemoveBackingFile(f);
 		reg.fValid = false;
 
 		if (!reg.fTempFiles.empty())
@@ -288,17 +321,42 @@ void FontRegRegistry::SweepStale()
 		if (!fs::exists(source, ec))
 			Unregister(reg.fId);
 	}
+
+	// Retry files the OS refused to release earlier; the font engine unmaps
+	// eventually (e.g. once nothing composes with the font any more).
+	if (!fPendingRemovals.empty())
+	{
+		std::vector<std::string> stillPending;
+		stillPending.swap(fPendingRemovals);
+		bool progressed = false;
+		for (const std::string& f : stillPending)
+			progressed = RemoveBackingFile(f) || progressed;
+		if (progressed)
+		{
+			InterfacePtr<IFontMgr> fontMgr(GetExecutionContextSession(), UseDefaultIID());
+			if (fontMgr != nil)
+				RescanFonts(fontMgr);
+		}
+	}
+
+	// Empty the trash opportunistically; renamed-but-locked files unlock over
+	// time and this is the only place that reaps them.
+	if (!fTrashDir.empty())
+	{
+		for (const fs::directory_entry& entry : fs::directory_iterator(ToPath(fTrashDir), ec))
+			fs::remove(entry.path(), ec);
+	}
 }
 
 void FontRegRegistry::Shutdown()
 {
 	for (FontRegRegistration& reg : fRegs)
 		reg.fValid = false;
+	std::error_code ec;
 	if (!fTempDir.empty())
-	{
-		std::error_code ec;
 		fs::remove_all(ToPath(fTempDir), ec);
-	}
+	if (!fTrashDir.empty())
+		fs::remove_all(ToPath(fTrashDir), ec);
 }
 
 int32 FontRegRegistry::CountActive() const
