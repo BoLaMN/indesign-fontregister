@@ -23,6 +23,19 @@ name: Build
 
 on:
   workflow_dispatch:
+    inputs:
+      sdk_zip_url:
+        description: >-
+          Pre-signed URL of an SDK zip to build against, overriding the
+          SDK_ZIP_URL secret. Lets one dispatch target a different InDesign
+          dot release (plug-ins are locked to the dot release they were
+          built against).
+        required: false
+        type: string
+      artifact_label:
+        description: Label appended to the artifact names, e.g. "21.0".
+        required: false
+        type: string
   push:
     branches: [main]
     tags: ['v*']
@@ -52,8 +65,10 @@ jobs:
         id: sdk
         shell: bash
         env:
-          SDK_ZIP_URL: ${{ secrets.SDK_ZIP_URL }}
-          SDK_PATH: ${{ vars.SDK_PATH }}
+          SDK_ZIP_URL: ${{ inputs.sdk_zip_url || secrets.SDK_ZIP_URL }}
+          # An explicit URL wins over a runner-local SDK too: an override
+          # dispatch means "build against exactly this SDK".
+          SDK_PATH: ${{ inputs.sdk_zip_url == '' && vars.SDK_PATH || '' }}
         run: |
           set -euo pipefail
           # Git Bash reports POSIX paths (/d/a/...) which MSBuild cannot use, so
@@ -234,7 +249,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: steps.sdk.outputs.found == 'true'
         with:
-          name: FontReg-${{ matrix.name }}
+          name: FontReg-${{ matrix.name }}${{ inputs.artifact_label != '' && format('-{0}', inputs.artifact_label) || '' }}
           path: dist/*.zip
           if-no-files-found: error
 
