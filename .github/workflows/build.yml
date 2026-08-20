@@ -272,8 +272,12 @@ jobs:
           body: |
             Built from ${{ github.sha }}.
 
-            **Requires InDesign 21.4 or newer.** Plug-ins are locked to the dot
-            release; see BUILD.md.
+            **Plug-ins are locked to the InDesign dot release they were built
+            against.** Unlabeled zips are built from the SDK the `SDK_ZIP_URL`
+            secret pointed at when the tag was pushed; zips with a version
+            suffix (e.g. `-21.0`) were built by a dispatch against that SDK
+            and added to the release. Pick the one matching your InDesign /
+            InDesign Server version.
 
-            Install by unzipping and either copying the plug-ins into InDesign's
+            Install by unzipping and either copying the plug-in into InDesign's
             Plug-Ins folder or pointing a `PluginConfig.txt` at the folder.
