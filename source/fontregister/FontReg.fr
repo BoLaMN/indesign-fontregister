@@ -1,0 +1,280 @@
+//========================================================================================
+//
+//  FontReg.fr
+//
+//  ODFRC resources: plug-in version, boss classes, and the scripting DOM
+//  additions (the FontRegistration object and the register methods on app).
+//
+//========================================================================================
+
+#include "VCPlugInHeaders.h"
+
+// General includes:
+#include "LocaleIndex.h"
+#include "PMLocaleIds.h"
+#include "StringTable.fh"
+#include "ObjectModelTypes.fh"
+#include "ShuksanID.h"
+#include "ScriptingID.h"
+#include "JavaScriptID.h"
+#include "ScriptInfoTypes.fh"
+#include "AppFrameworkID.h"   // kApplicationObjectScriptElement
+#include "FontRegID.h"
+#include "BuildNumber.h"
+#include "PlugInModel_UIAttributes.h"
+
+// Windows CLSIDs for the scripting object (COM automation); required fields
+// of the Object element even though ExtendScript never sees them.
+#define kFontRegistration_CLSID  {0xf74fed6a, 0x2326, 0x4d70, {0xba, 0x13, 0x0e, 0x04, 0xff, 0xb9, 0xf8, 0x96} }
+#define kFontRegistrations_CLSID {0x4f4ed8c1, 0xa45b, 0x48b9, {0xaf, 0xe0, 0x62, 0x65, 0x62, 0x32, 0x78, 0xe7} }
+
+#ifdef __ODFRC__
+
+/*
+ * Plugin version definition.
+ */
+resource PluginVersion (kSDKDefPluginVersionResourceID)
+{
+	kTargetVersion,
+	kFontRegPluginID,
+	kSDKDefPlugInMajorVersionNumber, kSDKDefPlugInMinorVersionNumber,
+	kSDKDefHostMajorVersionNumber, kSDKDefHostMinorVersionNumber,
+	kFontRegCurrentMajorFormatNumber, kFontRegCurrentMinorFormatNumber,
+	{ kInDesignProduct, kInCopyProduct, kInDesignServerProduct },
+	{ kWildFS },
+	kModelPlugIn,
+	kFontRegVersion
+};
+
+/*
+ * The ExtraPluginInfo resource adds extra information to the Missing Plug-in
+ * dialog. FontRegister stores nothing in documents, so this should never
+ * actually appear, but the resource is conventional.
+ */
+resource ExtraPluginInfo(1)
+{
+	kFontRegCompanyValue,
+	kFontRegMissingPluginURLValue,
+	kFontRegMissingPluginAlertValue,
+};
+
+/*
+ * Boss class definitions.
+ */
+resource ClassDescriptionTable(kSDKDefClassDescriptionTableResourceID)
+{{{
+
+	/** The scripting surface: register methods on app, the fontRegistrations
+	    collection, and the FontRegistration object's members. */
+	Class
+	{
+		kFontRegAppScriptProviderBoss,
+		kBaseScriptProviderBoss,
+		{
+			IID_ISCRIPTPROVIDER, kFontRegAppScriptProviderImpl,
+		}
+	},
+
+	/** The FontRegistration script object: a proxy over a registry entry,
+	    IIntData (from the parent boss) carrying the registration id. */
+	Class
+	{
+		kFontRegRegistrationProxyBoss,
+		kBaseProxyScriptObjectBoss,
+		{
+			IID_ISCRIPT, kFontRegProxyScriptImpl,
+		}
+	},
+
+	/** The stale-registration sweep, aggregated on the session. */
+	AddIn
+	{
+		kSessionBoss,
+		kInvalidClass,
+		{
+			IID_IFONTREGSWEEPIDLETASK, kFontRegSweepIdleTaskImpl,
+		}
+	},
+
+	/** Installs the sweep at startup, cleans the temp dir at shutdown. */
+	Class
+	{
+		kFontRegStartupShutdownBoss,
+		kInvalidClass,
+		{
+			IID_ISTARTUPSHUTDOWN, kFontRegStartupShutdownImpl,
+			IID_IK2SERVICEPROVIDER, kCStartupShutdownProviderImpl,
+		}
+	},
+
+}}};
+
+/*
+ * Implementation definition.
+ */
+resource FactoryList (kSDKDefFactoryListResourceID)
+{
+	kImplementationIDSpace,
+	{
+		#include "FontRegFactoryList.h"
+	}
+};
+
+/*
+ * String LocaleIndex.
+ */
+resource LocaleIndex ( kSDKDefStringsResourceID)
+{
+	kStringTableRsrcType,
+	{
+		kWildFS, k_Wild, kSDKDefStringsResourceID + index_enUS
+	}
+};
+
+resource LocaleIndex (kSDKDefStringsNoTransResourceID)
+{
+	kStringTableRsrcType,
+	{
+		kWildFS, k_Wild, kSDKDefStringsNoTransResourceID + index_enUS
+	}
+};
+
+// Strings not being localized
+resource StringTable (kSDKDefStringsNoTransResourceID + index_enUS)
+{
+	k_enUS,									// Locale Id
+	kEuropeanMacToWinEncodingConverter,		// Character encoding converter
+	{
+	}
+};
+
+/*
+ * Scripting surface.
+ *
+ * Registered against the core script manager (covers ExtendScript and the
+ * scripting DOM generally) and explicitly against the UXP script manager, for
+ * both InDesign and InDesign Server feature sets.
+ */
+resource VersionedScriptElementInfo(1)
+{
+	//Contexts
+	{
+		kCS4ScriptVersion, kCoreScriptManagerBoss, kInDesignAllLanguagesFS, k_Wild,
+		kCS4ScriptVersion, kCoreScriptManagerBoss, kInDesignServerAllLanguagesFS, k_Wild,
+		kCS4ScriptVersion, kUxpScriptMgrBoss, kInDesignAllLanguagesFS, k_Wild,
+	}
+
+	//Elements
+	{
+		Object
+		{
+			kFontRegObjectScriptElement,
+			c_FontRegistration,
+			"font registration",
+			"A session-scoped font registration made by registerFont or registerFontFolder. Unregistering removes exactly the fonts that call installed.",
+			kFontRegistration_CLSID,
+			CollectionInfo( c_FontRegistrations, "font registrations", "The session's active font registrations.", kFontRegistrations_CLSID ),
+			kIDBasedObjectScriptElement,
+			kBasicSuiteScriptElement,
+		}
+
+		Method
+		{
+			kFontRegRegisterFontMethodScriptElement,
+			e_FontRegRegisterFont,
+			"register font",
+			"Copy a font file into the session and make it available immediately. Session-scoped: gone when the process exits.",
+			ObjectType( kFontRegObjectScriptElement ),
+			"the registration",
+			{
+				p_FontRegPathParam, "path", "The full path of the font file.", StringType, kRequired,
+			}
+		}
+
+		Method
+		{
+			kFontRegRegisterFolderMethodScriptElement,
+			e_FontRegRegisterFolder,
+			"register font folder",
+			"Copy every font file in a folder into the session and make them available immediately. Session-scoped: gone when the process exits.",
+			ObjectType( kFontRegObjectScriptElement ),
+			"the registration",
+			{
+				p_FontRegPathParam, "path", "The full path of the folder.", StringType, kRequired,
+			}
+		}
+
+		Method
+		{
+			kFontRegUnregisterMethodScriptElement,
+			e_FontRegUnregister,
+			"unregister",
+			"Remove exactly the fonts this registration installed. Documents still using them see missing fonts.",
+			VoidType,
+			{
+			}
+		}
+
+		Property
+		{
+			kFontRegFontNamesPropertyScriptElement,
+			p_FontRegFontNames,
+			"font names",
+			"The fonts this registration installed, as family-tab-style names accepted by app.fonts.itemByName().",
+			StringArrayType(kVariableLength),
+			{}
+			kNoAttributeClass,
+		}
+
+		Property
+		{
+			kFontRegSourcePathPropertyScriptElement,
+			p_FontRegSourcePath,
+			"source path",
+			"The path this registration was made from.",
+			StringType,
+			{}
+			kNoAttributeClass,
+		}
+
+		Property
+		{
+			kFontRegIsValidPropertyScriptElement,
+			p_FontRegIsValid,
+			"is valid",
+			"False once this registration has been unregistered (explicitly or by the stale sweep).",
+			BoolType,
+			{}
+			kNoAttributeClass,
+		}
+
+		/* register methods live on the application object */
+		Provider
+		{
+			kFontRegAppScriptProviderBoss
+			{
+				Object{ kApplicationObjectScriptElement },
+				Method{ kFontRegRegisterFontMethodScriptElement },
+				Method{ kFontRegRegisterFolderMethodScriptElement },
+			}
+		}
+
+		/* the FontRegistration object and its collection on app */
+		Provider
+		{
+			kFontRegAppScriptProviderBoss
+			{
+				RepresentObject{ kFontRegObjectScriptElement },
+				Parent{ kApplicationObjectScriptElement },
+				Method{ kFontRegUnregisterMethodScriptElement },
+				Property{ kFontRegFontNamesPropertyScriptElement, kReadOnly },
+				Property{ kFontRegSourcePathPropertyScriptElement, kReadOnly },
+				Property{ kFontRegIsValidPropertyScriptElement, kReadOnly },
+			}
+		}
+	}
+};
+
+#endif // __ODFRC__
+
+#include "FontReg_enUS.fr"

@@ -1,0 +1,22 @@
+//========================================================================================
+//
+//  FontReg_enUS.fr
+//
+//========================================================================================
+
+#include "VCPlugInHeaders.h"
+
+#ifdef __ODFRC__
+
+// English string table is defined here
+
+resource StringTable (kSDKDefStringsResourceID + index_enUS)
+{
+	k_enUS,									// Locale Id
+	kEuropeanWinToMacEncodingConverter,		// Character encoding converter
+	{
+		kFontRegCompanyKey,					kFontRegCompanyValue,
+	}
+};
+
+#endif // __ODFRC__
