@@ -1,0 +1,264 @@
+name: Build
+
+# Builds both plug-ins for macOS and Windows, and publishes a release when a
+# v* tag is pushed.
+#
+# Everything GitHub's runners need is already there except the InDesign SDK,
+# which is licence-restricted and must never be committed or published. Give a
+# runner access one of two ways:
+#
+#   1. Self-hosted runner. Unpack the SDK on the machine, set the SDK_PATH
+#      repository variable, and point `runs-on` at it. The SDK stays yours.
+#
+#   2. GitHub-hosted runner. Put a zip somewhere access-controlled and set the
+#      SDK_ZIP_URL secret to a pre-signed URL. This does hand a copy to GitHub's
+#      infrastructure, so check it against your SDK licence. Pre-signed URLs
+#      expire, and the build starts skipping when they do.
+#
+# With neither set the build steps skip with an explanation rather than failing
+# with a confusing compile error.
+#
+# Publishing the *compiled plug-ins* is fine: shipping plug-ins is what the SDK
+# is for. It is the SDK itself that must not be redistributed.
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    tags: ['v*']
+
+permissions:
+  contents: write        # needed by the release job
+
+jobs:
+  build:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: macos
+            os: macos-latest
+          - name: windows
+            os: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # One bash step for both platforms: the Windows runners have Git Bash,
+      # curl and unzip, so there is no need for a PowerShell variant.
+      - name: Locate or fetch the SDK
+        id: sdk
+        shell: bash
+        env:
+          SDK_ZIP_URL: ${{ secrets.SDK_ZIP_URL }}
+          SDK_PATH: ${{ vars.SDK_PATH }}
+        run: |
+          set -euo pipefail
+          # Git Bash reports POSIX paths (/d/a/...) which MSBuild cannot use, so
+          # every path is emitted twice: `path` for bash, `winpath` for MSBuild.
+          emit() {
+            echo "path=$1" >> "$GITHUB_OUTPUT"
+            if [ "$RUNNER_OS" = "Windows" ]; then
+              echo "winpath=$(cygpath -w "$1")" >> "$GITHUB_OUTPUT"
+            else
+              echo "winpath=$1" >> "$GITHUB_OUTPUT"
+            fi
+            echo "found=true" >> "$GITHUB_OUTPUT"
+          }
+          if [ "$RUNNER_OS" = "Windows" ] && [ -n "${SDK_PATH:-}" ]; then
+            SDK_PATH="$(cygpath -u "$SDK_PATH")"
+          fi
+          if [ -n "${SDK_PATH:-}" ] && [ -d "$SDK_PATH/build" ]; then
+            echo "Using the SDK already on this runner: $SDK_PATH"
+            emit "$SDK_PATH"
+          elif [ -n "${SDK_ZIP_URL:-}" ]; then
+            echo "Downloading the SDK"
+            code=$(curl -sSL -w '%{http_code}' -o sdk.zip "$SDK_ZIP_URL" || echo 000)
+            if [ "$code" = "403" ] || [ "$code" = "401" ]; then
+              echo "::error::SDK download refused ($code). Pre-signed URLs expire; refresh the SDK_ZIP_URL secret, or use a self-hosted runner with SDK_PATH."
+              exit 1
+            elif [ "$code" != "200" ]; then
+              echo "::error::SDK download failed with HTTP $code."
+              exit 1
+            fi
+            mkdir -p sdk-unpacked
+            unzip -qq sdk.zip -d sdk-unpacked
+            # The zip may or may not have a single wrapper directory.
+            root="$(cd sdk-unpacked && ls -d */ 2>/dev/null | head -1 || true)"
+            if [ -n "$root" ] && [ -d "sdk-unpacked/$root/build" ]; then
+              path="$PWD/sdk-unpacked/${root%/}"
+            else
+              path="$PWD/sdk-unpacked"
+            fi
+            emit "$path"
+          else
+            echo "::warning::No SDK available, skipping the build. Set the SDK_PATH variable or the SDK_ZIP_URL secret."
+            echo "found=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      # Both platforms' build files expect the SDK at <repo>/sdk.
+      - name: Link the SDK into place
+        if: steps.sdk.outputs.found == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf sdk
+          if [ "${{ runner.os }}" = "Windows" ]; then
+            # A directory junction, so MSBuild's relative paths resolve.
+            cmd //c mklink //J sdk "${{ steps.sdk.outputs.winpath }}"
+          else
+            ln -s '${{ steps.sdk.outputs.path }}' sdk
+          fi
+          ls sdk/build >/dev/null && echo "SDK linked"
+
+      # ---------------------------------------------------------------- macOS
+      - name: Build (macOS)
+        if: steps.sdk.outputs.found == 'true' && runner.os == 'macOS'
+        shell: bash
+        working-directory: build/mac/prj
+        run: |
+          xcodebuild -version
+          xcodebuild -workspace FontReg.xcworkspace -scheme Release \
+                     -configuration Default clean build
+
+      # -------------------------------------------------------------- Windows
+      - name: Pick a toolset the SDK supports
+        id: toolset
+        if: steps.sdk.outputs.found == 'true' && runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          # sdk/source/precomp/msvc/xlocnum_hack.h patches a copy of the MSVC
+          # <xlocnum> header and hard-errors on any _MSC_VER it has not been
+          # updated for. The newest it knows is 1942 (VS 17.12), so the runner's
+          # default toolset is too new. Pick the newest installed one it accepts.
+          $ok = '14.42', '14.39', '14.38', '14.31', '14.29'  # _MSC_VER 1942..1929
+          $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+          $vs = & $vswhere -latest -property installationPath
+          $installed = Get-ChildItem (Join-Path $vs 'VC\Tools\MSVC') -Directory |
+                       ForEach-Object { $_.Name } | Sort-Object -Descending
+          "Installed toolsets: $($installed -join ', ')"
+          $pick = $installed | Where-Object { $v = $_; $ok | Where-Object { $v.StartsWith($_) } } | Select-Object -First 1
+          if (-not $pick) {
+            throw "No SDK-compatible MSVC toolset. Supported: $($ok -join ', '). Found: $($installed -join ', ')."
+          }
+          # 14.2x is the VS 2019 compiler and needs the v142 platform toolset;
+          # 14.3x/14.4x are VS 2022 and use v143. MSVC stays binary compatible
+          # across these, so either links fine against the SDK's libs.
+          $pt = if ($pick.StartsWith('14.2')) { 'v142' } else { 'v143' }
+          "Using $pick with PlatformToolset $pt"
+          "version=$pick" >> $env:GITHUB_OUTPUT
+          "platform=$pt" >> $env:GITHUB_OUTPUT
+
+      - uses: microsoft/setup-msbuild@v2
+        if: steps.sdk.outputs.found == 'true' && runner.os == 'Windows'
+
+      - name: Build (Windows)
+        if: steps.sdk.outputs.found == 'true' && runner.os == 'Windows'
+        shell: pwsh
+        working-directory: build/win/prj
+        env:
+          SDK_DIR: ${{ steps.sdk.outputs.winpath }}
+        run: |
+          foreach ($proj in 'FontReg.sdk.vcxproj') {
+            foreach ($cfg in 'Debug', 'Release') {
+              "::group::$proj $cfg"
+              # These have to be global properties. The SDK's property sheets set
+              # them relative to the SDK's own prj directory, assuming the project
+              # lives inside the SDK tree, and an imported sheet outranks a
+              # PropertyGroup in our project.
+              $out = msbuild $proj /p:Configuration=$cfg /p:Platform=x64 `
+                      /p:ID_SDK_DIR="$env:SDK_DIR" `
+                      /p:BOOST_HEADER_SEARCH_PATH="$env:SDK_DIR\external\dva\third_party\boost_libraries" `
+                      /p:DVA_ROOT="$env:SDK_DIR\external\dva" `
+                      /p:DVA_SHARED="$env:SDK_DIR\external\dva\shared" `
+                      /p:ID_DVA="$env:SDK_DIR\dvaUtils" `
+                      /p:VCToolsVersion="${{ steps.toolset.outputs.version }}" `
+                      /p:PlatformToolset="${{ steps.toolset.outputs.platform }}" `
+                      /m /v:minimal 2>&1
+              $out | Out-Host
+              if ($LASTEXITCODE -ne 0) { throw "$proj $cfg failed" }
+              # merge_res.cmd prints usage and exits 0 when it cannot find the
+              # .res, so a resource that never got merged looks like success.
+              if ($out -match 'Bad arguments to merge_res') { throw "${proj} ${cfg}: merge_res.cmd got bad arguments" }
+              "::endgroup::"
+            }
+          }
+
+      # ------------------------------------------------------------- checking
+      - name: Check the plug-ins came out
+        if: steps.sdk.outputs.found == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          bad=0
+          if [ "${{ runner.os }}" = "macOS" ]; then
+            for p in FontReg; do
+              b="build/mac/release_cocoa64/SDK/$p.sdk.InDesignPlugin"
+              if [ ! -d "$b" ]; then echo "MISSING: $b"; bad=1; continue; fi
+              # A bundle with no compiled resources loads as "not a valid
+              # plug-in", so treat that as a build failure rather than shipping.
+              n=$(ls "$b/Versions/A/Resources" 2>/dev/null | grep -c '^idrc_' || true)
+              echo "$p: $n resource groups, $(lipo -archs "$b/Versions/A/$p.sdk")"
+              [ "$n" -eq 0 ] && { echo "  no compiled resources"; bad=1; }
+            done
+          else
+            for cfg in debugx64 releasex64; do
+              for p in FontReg.sdk; do
+                f="build/win/$cfg/sdk/$p.pln"
+                if [ ! -f "$f" ]; then echo "MISSING: $f"; bad=1; continue; fi
+                n=$(find "build/win/$cfg/sdk/($p Resources)" -name '*.idrc' 2>/dev/null | wc -l | tr -d ' ')
+                echo "$cfg/$p: $(wc -c <"$f" | tr -d ' ') bytes, $n resources"
+                [ "$n" -eq 0 ] && { echo "  no compiled resources"; bad=1; }
+              done
+            done
+          fi
+          [ "$bad" -eq 0 ] || { echo "build output incomplete"; exit 1; }
+
+      - name: Package
+        if: steps.sdk.outputs.found == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          if [ "${{ runner.os }}" = "macOS" ]; then
+            # ditto preserves the bundle structure and symlinks that a plain zip
+            # would flatten.
+            ditto -c -k --keepParent build/mac/release_cocoa64/SDK dist/FontReg-macos-universal.zip
+          else
+            7z a -tzip dist/FontReg-windows-x64.zip ./build/win/releasex64/sdk/* >/dev/null
+          fi
+          ls -la dist
+
+      - uses: actions/upload-artifact@v4
+        if: steps.sdk.outputs.found == 'true'
+        with:
+          name: FontReg-${{ matrix.name }}
+          path: dist/*.zip
+          if-no-files-found: error
+
+  release:
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - run: ls -la dist
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*.zip
+          generate_release_notes: true
+          body: |
+            Built from ${{ github.sha }}.
+
+            **Requires InDesign 21.4 or newer.** Plug-ins are locked to the dot
+            release; see BUILD.md.
+
+            Install by unzipping and either copying the plug-ins into InDesign's
+            Plug-Ins folder or pointing a `PluginConfig.txt` at the folder.

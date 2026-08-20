@@ -1,0 +1,23 @@
+# Adobe InDesign SDK -- proprietary, licensed per developer, ~4GB.
+# Download from https://developer.adobe.com/console/downloads and unzip so that
+# the plug-in SDK lands at <repo>/sdk (the path the build files expect).
+/sdk/
+
+# Build output
+/build/mac/prj/build/
+/build/mac/debug_cocoa64/
+/build/mac/release_cocoa64/
+/build/win/obj[Dd]x64/
+/build/win/obj[Rr]x64/
+/build/win/debugx64/
+/build/win/releasex64/
+
+# Xcode user state
+*.xcodeproj/xcuserdata/
+*.xcodeproj/project.xcworkspace/xcuserdata/
+
+# Visual Studio user state
+*.vcxproj.user
+.vs/
+
+.DS_Store
