@@ -31,6 +31,9 @@ CREATE_PMINTERFACE(FontRegStartupShutdown, kFontRegStartupShutdownImpl)
 
 void FontRegStartupShutdown::Startup()
 {
+	// A crashed engine never runs Shutdown, so reap dead sessions' dirs here.
+	FontRegRegistry::Instance().CleanupStaleSessionDirs();
+
 	InterfacePtr<IIdleTask> task(GetExecutionContextSession(), IID_IFONTREGSWEEPIDLETASK);
 	ASSERT(task);
 	if (task != nil)

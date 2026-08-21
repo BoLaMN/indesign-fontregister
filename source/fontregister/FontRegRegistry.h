@@ -41,9 +41,15 @@ public:
 	    sourcePath returns the existing id. */
 	int32 Register(const PMString& sourcePath, bool isFolder, PMString& outError);
 
-	/** Delete the registration's copies and rescan. False if the id is
-	    unknown; an already-invalid id is a no-op returning true. */
-	bool Unregister(int32 id);
+	/** Delete the registration's copies and rescan; a copy the OS refuses to
+	    release is retried once after the rescan (which unmaps fonts) and then
+	    queued for the sweep, with outError naming it so the script can see.
+	    False if the id is unknown; an already-invalid id is a no-op. */
+	bool Unregister(int32 id, PMString& outError);
+
+	/** Remove FontRegister session/trash dirs left by dead processes (a
+	    crashed engine never runs Shutdown). Called at startup. */
+	void CleanupStaleSessionDirs();
 
 	/** Unregister every active registration whose sourcePath no longer
 	    exists (the proxy deleting a job dir is the signal the job is done),
@@ -61,6 +67,7 @@ private:
 	FontRegRegistry() = default;
 
 	bool EnsureTempDir(PMString& outError);
+	bool QueryCompositeFontFolder(std::string& outUtf8Path) const;
 	int32 FindActiveBySource(const PMString& sourcePath) const;
 
 	/** Delete a backing copy, verified: on Windows a font file CoolType has

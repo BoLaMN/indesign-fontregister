@@ -179,7 +179,14 @@ ErrorCode FontRegScriptProvider::Unregister(IScriptRequestData* data, IScript* s
 	const FontRegRegistration* reg = FindFromScript(script);
 	if (reg == nil)
 		return Fail(PMString("FontRegister: this FontRegistration no longer exists."));
-	FontRegRegistry::Instance().Unregister(reg->fId);	// already-invalid is a no-op
+	PMString error;
+	FontRegRegistry::Instance().Unregister(reg->fId, error);	// already-invalid is a no-op
+	if (!error.empty())
+	{
+		// The registration is invalid and the sweep will finish the removal,
+		// but the caller deserves to know the fonts are not gone yet.
+		return Fail(error);
+	}
 	return kSuccess;
 }
 

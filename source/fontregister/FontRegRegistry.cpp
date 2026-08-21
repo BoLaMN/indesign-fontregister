@@ -29,9 +29,17 @@
 #include "FontRegRegistry.h"
 
 #include <algorithm>
+#include <cstdlib>
 #include <filesystem>
 #include <set>
 #include <system_error>
+
+#ifdef WINDOWS
+#include <windows.h>
+#else
+#include <signal.h>
+#include <cerrno>
+#endif
 
 namespace fs = std::filesystem;
 
@@ -83,6 +91,21 @@ void SnapshotFontNames(IFontMgr* fontMgr, std::set<std::string>& outNames)
 	}
 }
 
+bool ProcessIsAlive(unsigned long pid)
+{
+#ifdef WINDOWS
+	HANDLE h = ::OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE, (DWORD)pid);
+	if (h == NULL)
+		return false;
+	DWORD code = 0;
+	const bool alive = ::GetExitCodeProcess(h, &code) && code == STILL_ACTIVE;
+	::CloseHandle(h);
+	return alive;
+#else
+	return kill((pid_t)pid, 0) == 0 || errno == EPERM;
+#endif
+}
+
 /** Make the font system notice folder changes, synchronously. The seed scan
     is incremental (one folder per call), so poll until the seed moves or a
     bounded number of calls pass, then force the list rebuild. */
@@ -103,11 +126,8 @@ FontRegRegistry& FontRegRegistry::Instance()
 	return sInstance;
 }
 
-bool FontRegRegistry::EnsureTempDir(PMString& outError)
+bool FontRegRegistry::QueryCompositeFontFolder(std::string& outUtf8Path) const
 {
-	if (fDirRegistered)
-		return true;
-
 	InterfacePtr<ICompositeFontMgr> compFontMgr(GetExecutionContextSession(), IID_ICOMPOSITEFONTMGR);
 	if (compFontMgr == nil)
 	{
@@ -116,16 +136,28 @@ bool FontRegRegistry::EnsureTempDir(PMString& outError)
 			compFontMgr.reset((ICompositeFontMgr*)workspace->QueryInterface(IID_ICOMPOSITEFONTMGR));
 	}
 	if (compFontMgr == nil)
+		return false;
+
+	IDFile folder;
+	compFontMgr->GetCompositeFontFolder(&folder);
+	const PMString folderPath = FileUtils::SysFileToPMString(folder);
+	outUtf8Path = std::string(folderPath.GetUTF8String());
+	return !outUtf8Path.empty();
+}
+
+bool FontRegRegistry::EnsureTempDir(PMString& outError)
+{
+	if (fDirRegistered)
+		return true;
+
+	std::string compFolder;
+	if (!QueryCompositeFontFolder(compFolder))
 	{
 		outError = "FontRegister: the composite font manager is unavailable.";
 		return false;
 	}
 
-	IDFile folder;
-	compFontMgr->GetCompositeFontFolder(&folder);
-	const PMString folderPath = FileUtils::SysFileToPMString(folder);
-
-	fs::path dir = ToPath(std::string(folderPath.GetUTF8String()));
+	fs::path dir = ToPath(compFolder);
 	dir /= "FontRegister-" + std::to_string(
 		static_cast<unsigned long>(
 #ifdef WINDOWS
@@ -286,7 +318,7 @@ int32 FontRegRegistry::Register(const PMString& sourcePath, bool isFolder, PMStr
 	return reg.fId;
 }
 
-bool FontRegRegistry::Unregister(int32 id)
+bool FontRegRegistry::Unregister(int32 id, PMString& outError)
 {
 	for (FontRegRegistration& reg : fRegs)
 	{
@@ -295,19 +327,83 @@ bool FontRegRegistry::Unregister(int32 id)
 		if (!reg.fValid)
 			return true;	// double unregister() is a no-op
 
+		std::vector<std::string> stuck;
 		for (const std::string& f : reg.fTempFiles)
-			RemoveBackingFile(f);
+			if (!RemoveBackingFile(f))
+				stuck.push_back(f);
 		reg.fValid = false;
 
 		if (!reg.fTempFiles.empty())
 		{
 			InterfacePtr<IFontMgr> fontMgr(GetExecutionContextSession(), UseDefaultIID());
 			if (fontMgr != nil)
+			{
 				RescanFonts(fontMgr);
+
+				// A font file the engine had mapped (because something
+				// composed with it) refuses both delete and rename; the
+				// rescan re-initializes the font manager, which is what
+				// releases the mapping -- so retry the stragglers now.
+				if (!stuck.empty())
+				{
+					std::vector<std::string> still;
+					for (const std::string& f : stuck)
+					{
+						// RemoveBackingFile queued it once already; drop the
+						// duplicate before retrying.
+						fPendingRemovals.erase(
+							std::remove(fPendingRemovals.begin(), fPendingRemovals.end(), f),
+							fPendingRemovals.end());
+						if (!RemoveBackingFile(f))
+							still.push_back(f);
+					}
+					if (still.size() < stuck.size())
+						RescanFonts(fontMgr);
+					stuck.swap(still);
+				}
+			}
+		}
+
+		if (!stuck.empty())
+		{
+			outError = "FontRegister: the OS is still holding ";
+			outError.Append(PMString(std::to_string(stuck.size()).c_str()));
+			outError.Append(" font file(s); they will be removed by the background sweep. First: ");
+			outError.Append(PMString(stuck.front().c_str()));
 		}
 		return true;
 	}
 	return false;
+}
+
+void FontRegRegistry::CleanupStaleSessionDirs()
+{
+	std::string compFolder;
+	if (!QueryCompositeFontFolder(compFolder))
+		return;
+
+	const fs::path comp = ToPath(compFolder);
+	std::error_code ec;
+	std::vector<fs::path> parents = { comp, comp.parent_path().parent_path() };
+	for (const fs::path& parent : parents)
+	{
+		for (const fs::directory_entry& entry : fs::directory_iterator(parent, ec))
+		{
+			if (!entry.is_directory())
+				continue;
+			const std::string name = FromPath(entry.path().filename());
+			unsigned long pid = 0;
+			if (name.rfind("FontRegister-trash-", 0) == 0)
+				pid = std::strtoul(name.c_str() + 19, nullptr, 10);
+			else if (name.rfind("FontRegister-", 0) == 0)
+				pid = std::strtoul(name.c_str() + 13, nullptr, 10);
+			else
+				continue;
+			if (pid == 0 || ProcessIsAlive(pid))
+				continue;
+			fs::remove_all(entry.path(), ec);
+		}
+	}
 }
 
 void FontRegRegistry::SweepStale()
@@ -319,7 +415,10 @@ void FontRegRegistry::SweepStale()
 			continue;
 		const fs::path source = ToPath(std::string(reg.fSourcePath.GetUTF8String()));
 		if (!fs::exists(source, ec))
-			Unregister(reg.fId);
+		{
+			PMString ignored;	// stragglers land on fPendingRemovals below
+			Unregister(reg.fId, ignored);
+		}
 	}
 
 	// Retry files the OS refused to release earlier; the font engine unmaps
